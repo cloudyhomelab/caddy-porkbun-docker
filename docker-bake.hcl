@@ -1,6 +1,7 @@
-variable "REGISTRY" { default = "docker.io/binarycodes" }
+variable "REGISTRY" { default = "docker.io" }
+variable "NAMESPACE"  { default = "binarycodes" }
 
-variable "TAG_NAME" { default = "caddy-porkbun" }
+variable "IMAGE_NAME" { default = "caddy-porkbun" }
 variable "CADDY_VERSION" { default = "2.11" }
 variable "CADDY_PORKBUN_VERSION" { default = "v0.3.1" }
 
@@ -13,13 +14,13 @@ target "app" {
   dockerfile = "Dockerfile"
 
   args = {
-    CADDY_VERSION = "${CADDY_VERSION}"
-    CADDY_PORKBUN_VERSION = "${CADDY_PORKBUN_VERSION}"
+    CADDY_VERSION = CADDY_VERSION
+    CADDY_PORKBUN_VERSION = CADDY_PORKBUN_VERSION
   }
 
   tags = [
-    "${REGISTRY}/${TAG_NAME}:${CADDY_VERSION}",
-    "${REGISTRY}/${TAG_NAME}:latest",
+    "${REGISTRY}/${NAMESPACE}/${IMAGE_NAME}:${CADDY_VERSION}",
+    "${REGISTRY}/${NAMESPACE}/${IMAGE_NAME}:latest",
   ]
 
   platforms = ["linux/amd64"]
