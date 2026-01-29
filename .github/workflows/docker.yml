@@ -41,7 +41,7 @@ jobs:
             *.attest=type=sbom
 
       - name: Install cosign
-        uses: sigstore/cosign-installer@v4
+        uses: sigstore/cosign-installer@v4.0.0
 
       - name: Sign published image(s) (keyless)
         env:
