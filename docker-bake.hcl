@@ -6,10 +6,10 @@ variable "CADDY_VERSION" { default = "2.11" }
 variable "CADDY_PORKBUN_VERSION" { default = "v0.3.1" }
 
 group "default" {
-  targets = ["app"]
+  targets = ["image"]
 }
 
-target "app" {
+target "image" {
   context    = "."
   dockerfile = "Dockerfile"
 
@@ -24,4 +24,9 @@ target "app" {
   ]
 
   platforms = ["linux/amd64"]
+}
+
+target "image-all" {
+  inherits = ["image"]
+  platforms = ["linux/amd64", "linux/arm64"]
 }
