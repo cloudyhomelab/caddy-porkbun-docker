@@ -1,0 +1,65 @@
+name: bump caddy and porkbun
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 6 * * 1'
+
+concurrency:
+  group: ${{ github.workflow }}
+
+jobs:
+  bump:
+    name: open a pull request for new upstream versions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: update docker-bake.hcl to the latest upstream versions
+        id: bump
+        working-directory: tools
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          changes=$(python3 bump_caddy.py)
+          echo "changes=${changes}" >> "$GITHUB_OUTPUT"
+
+      # a pull request opened with GITHUB_TOKEN starts no workflow run, and the
+      # build check is what verifies the new digests and versions
+      - name: mint a token for the bot
+        if: steps.bump.outputs.changes != ''
+        id: bot
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.CLOUDYHOME_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.CLOUDYHOME_BOT_PRIVATE_KEY }}
+
+      - name: open the pull request
+        id: pr
+        if: steps.bump.outputs.changes != ''
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ steps.bot.outputs.token }}
+          branch: bump/caddy
+          commit-message: 'build: bump ${{ steps.bump.outputs.changes }}'
+          title: 'build: bump ${{ steps.bump.outputs.changes }}'
+          body: |
+            Caddy images: https://hub.docker.com/_/caddy
+            Porkbun plugin releases: https://github.com/caddy-dns/porkbun/releases
+
+            Opened by the `bump caddy and porkbun` workflow; the build check verifies the new digests and versions.
+
+      # auto-merge survives later pushes to the branch, so an updated PR keeps it
+      - name: enable auto-merge
+        if: steps.pr.outputs.pull-request-operation == 'created'
+        env:
+          GH_TOKEN: ${{ steps.bot.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          NUMBER: ${{ steps.pr.outputs.pull-request-number }}
+        run: gh pr merge --auto --squash "$NUMBER"
