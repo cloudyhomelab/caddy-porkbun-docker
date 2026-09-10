@@ -51,11 +51,12 @@ volumes:
 ## Building
 
 The image tag is the caddy version, which lives only in the Dockerfile's
-`FROM` lines; pass it to bake:
+`FROM` lines; `tools/caddy_version.py` reads it for bake:
 
 ```sh
-CADDY_VERSION=2.11.4 docker buildx bake                      # both platforms
-LOCAL=1 CADDY_VERSION=2.11.4 docker buildx bake --load       # this machine only
+export CADDY_VERSION=$(python3 tools/caddy_version.py)
+docker buildx bake                       # both platforms
+LOCAL=1 docker buildx bake --load        # this machine only
 ```
 
 Dependabot bumps the pinned caddy images weekly. The porkbun plugin version is
