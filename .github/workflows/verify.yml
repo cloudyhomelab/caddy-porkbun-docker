@@ -50,16 +50,27 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      - name: read the caddy version from the Dockerfile
+        id: caddy
+        run: |
+          set -euo pipefail
+          version=$(grep -oP '^FROM caddy:\K[0-9]+\.[0-9]+\.[0-9]+(?=-alpine@)' Dockerfile)
+          echo "version=${version}" | tee -a "$GITHUB_OUTPUT"
+
       - name: set up docker buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
         with:
           driver: docker-container
 
       - name: run the BuildKit Dockerfile checks
+        env:
+          CADDY_VERSION: ${{ steps.caddy.outputs.version }}
         run: docker buildx bake --check
 
       - name: build the amd64 image
         uses: docker/bake-action@d3418bd7d0e9324001bca92fa8ba175ea7e6dc9b # v7.3.0
+        env:
+          CADDY_VERSION: ${{ steps.caddy.outputs.version }}
         with:
           targets: default
           load: true
@@ -69,20 +80,20 @@ jobs:
             *.tags=caddy-porkbun:verify
 
       - name: smoke-test the image
+        env:
+          CADDY_VERSION: ${{ steps.caddy.outputs.version }}
         run: |
           set -euo pipefail
           image=caddy-porkbun:verify
 
           # xcaddy builds whatever CADDY_VERSION the builder image carries, so the
-          # binary must match the version the tags and labels claim
-          args=$(docker buildx bake --print image | jq -c '.target.image.args')
-          expected=$(jq -r '.CADDY_IMAGE' <<<"$args" | sed -E 's/^caddy:([0-9.]+)-alpine@.*$/\1/')
+          # binary must match the runtime image and the tag derived from it
           actual=$(docker run --rm "$image" caddy version | cut -d' ' -f1)
-          echo "caddy version: ${actual} (expected v${expected})"
-          [ "$actual" = "v${expected}" ]
+          echo "caddy version: ${actual} (expected v${CADDY_VERSION})"
+          [ "$actual" = "v${CADDY_VERSION}" ]
 
           # the plugin must be compiled in at the pinned version
-          porkbun=$(jq -r '.CADDY_PORKBUN_VERSION' <<<"$args")
+          porkbun=$(docker buildx bake --print image | jq -r '.target.image.args.CADDY_PORKBUN_VERSION')
           docker run --rm "$image" caddy list-modules | grep -qx dns.providers.porkbun
           docker run --rm "$image" caddy build-info | awk -v version="$porkbun" '
             $1 == "dep" && $2 == "github.com/caddy-dns/porkbun" { print; found = ($3 == version) }

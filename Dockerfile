@@ -1,10 +1,7 @@
-# docker-bake.hcl pins both images to a version and digest; bare docker builds float
-ARG CADDY_IMAGE="caddy:alpine"
-ARG CADDY_BUILDER_IMAGE="caddy:builder-alpine"
 ARG CADDY_PORKBUN_VERSION="unknown"
 
 # Go cross-compiles, so build natively instead of under emulation
-FROM --platform=$BUILDPLATFORM ${CADDY_BUILDER_IMAGE} AS builder
+FROM --platform=$BUILDPLATFORM caddy:2.11.4-builder-alpine@sha256:1a1689db91cfb390b2d856a1b3774e796852822cd723fa54c475b272f82bb4b7 AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -16,7 +13,7 @@ RUN [ "${CADDY_PORKBUN_VERSION}" != "unknown" ] || { echo "ERROR: CADDY_PORKBUN_
     --with "github.com/caddy-dns/porkbun@${CADDY_PORKBUN_VERSION}"
 
 
-FROM ${CADDY_IMAGE}
+FROM caddy:2.11.4-alpine@sha256:5f5c8640aae01df9654968d946d8f1a56c497f1dd5c5cda4cf95ab7c14d58648
 
 # the weekly rebuild ships alpine security fixes between digest bumps
 RUN apk upgrade --no-cache

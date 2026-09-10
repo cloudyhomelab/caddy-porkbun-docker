@@ -50,15 +50,18 @@ volumes:
 
 ## Building
 
+The image tag is the caddy version, which lives only in the Dockerfile's
+`FROM` lines; pass it to bake:
+
 ```sh
-docker buildx bake                 # both platforms, tags from docker-bake.hcl
-docker buildx bake --set '*.platform=linux/amd64' --load   # a local image
+CADDY_VERSION=2.11.4 docker buildx bake                      # both platforms
+LOCAL=1 CADDY_VERSION=2.11.4 docker buildx bake --load       # this machine only
 ```
 
-Versions live in `docker-bake.hcl`: the caddy version with the digests of its
-alpine and builder images, and the porkbun plugin version. The `bump caddy and
-porkbun` workflow runs `tools/bump_caddy.py` weekly and opens an auto-merging
-pull request when Docker Hub or the plugin's releases moved.
+Dependabot bumps the pinned caddy images weekly. The porkbun plugin version is
+the `CADDY_PORKBUN_VERSION` default in `docker-bake.hcl`; the `bump the porkbun
+plugin` workflow runs `tools/bump_porkbun.py` weekly and opens an auto-merging
+pull request for a new release.
 
 ## Verifying the image
 

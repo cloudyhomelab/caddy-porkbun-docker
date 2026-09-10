@@ -1,4 +1,4 @@
-name: bump caddy and porkbun
+name: bump the porkbun plugin
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   bump:
-    name: open a pull request for new upstream versions
+    name: open a pull request for a new caddy-dns/porkbun release
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -21,19 +21,19 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: update docker-bake.hcl to the latest upstream versions
+      - name: update docker-bake.hcl to the latest release
         id: bump
         working-directory: tools
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          changes=$(python3 bump_caddy.py)
-          echo "changes=${changes}" >> "$GITHUB_OUTPUT"
+          version=$(python3 bump_porkbun.py)
+          echo "version=${version}" >> "$GITHUB_OUTPUT"
 
       # a pull request opened with GITHUB_TOKEN starts no workflow run, and the
-      # build check is what verifies the new digests and versions
+      # build check is what verifies the plugin still compiles into caddy
       - name: mint a token for the bot
-        if: steps.bump.outputs.changes != ''
+        if: steps.bump.outputs.version != ''
         id: bot
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
@@ -42,18 +42,17 @@ jobs:
 
       - name: open the pull request
         id: pr
-        if: steps.bump.outputs.changes != ''
+        if: steps.bump.outputs.version != ''
         uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
         with:
           token: ${{ steps.bot.outputs.token }}
-          branch: bump/caddy
-          commit-message: 'build: bump ${{ steps.bump.outputs.changes }}'
-          title: 'build: bump ${{ steps.bump.outputs.changes }}'
+          branch: bump/porkbun
+          commit-message: 'build: bump caddy-dns/porkbun to ${{ steps.bump.outputs.version }}'
+          title: 'build: bump caddy-dns/porkbun to ${{ steps.bump.outputs.version }}'
           body: |
-            Caddy images: https://hub.docker.com/_/caddy
-            Porkbun plugin releases: https://github.com/caddy-dns/porkbun/releases
+            Release notes: https://github.com/caddy-dns/porkbun/releases/tag/${{ steps.bump.outputs.version }}
 
-            Opened by the `bump caddy and porkbun` workflow; the build check verifies the new digests and versions.
+            Opened by the `bump the porkbun plugin` workflow; the build check verifies the plugin compiles into caddy.
 
       # auto-merge survives later pushes to the branch, so an updated PR keeps it
       - name: enable auto-merge

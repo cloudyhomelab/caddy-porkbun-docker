@@ -12,8 +12,19 @@ updates:
       github-actions:
         patterns: ['*']
 
-  # the base images are ARG-driven, which Dependabot's docker ecosystem cannot
-  # follow; bump-caddy.yml moves them instead
+  # weekly so upstream rebuilds of the same caddy tag (new digest) ship promptly;
+  # one group keeps the builder and runtime images at the same version
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: build
+    groups:
+      caddy:
+        patterns: ['*']
+
   - package-ecosystem: pip
     directory: /tools
     schedule:
