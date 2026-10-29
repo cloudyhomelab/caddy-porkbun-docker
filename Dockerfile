@@ -1,7 +1,7 @@
 ARG CADDY_PORKBUN_VERSION="unknown"
 
 # Go cross-compiles, so build natively instead of under emulation
-FROM --platform=$BUILDPLATFORM caddy:2.11.7-builder-alpine@sha256:d6161a2c82fd58b3205048958fb6246d0c5d892beee8a47e90944610c4efd100 AS builder
+FROM --platform=$BUILDPLATFORM caddy:2.11.7-builder-alpine@sha256:ef9b65adf9a224770c6d5f6d1ae1bf99bc3caaa78d8c4bae3ea949ee6984f301 AS builder
 
 ARG TARGETOS
 ARG TARGETARCH
@@ -13,7 +13,7 @@ RUN [ "${CADDY_PORKBUN_VERSION}" != "unknown" ] || { echo "ERROR: CADDY_PORKBUN_
     --with "github.com/caddy-dns/porkbun@${CADDY_PORKBUN_VERSION}"
 
 
-FROM caddy:2.11.7-alpine@sha256:d8542f48d34a9cf4e4c11a478865229840e87e4c96ea3f439101f31a5d35f75f
+FROM caddy:2.11.7-alpine@sha256:eb4d35b7452d1ab6171fbdbe8d9275b2301dad6dad92115d91e19fb9b24d510f
 
 # the weekly rebuild ships alpine security fixes between digest bumps
 RUN apk upgrade --no-cache
